@@ -20,6 +20,7 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
 import Alert from '@material-ui/lab/Alert';
 import UserInputs from './UserInputs';
+import { myConfig } from './config.js';
 
 const useStyles = makeStyles((theme) => ({
 	root: {
@@ -88,7 +89,7 @@ export default function Manage() {
 	}, []);
 	
 	const listUsers = () => {
-		fetch('http://172.19.10.39:5000/api/list_users', {
+		fetch(`http://${myConfig.apiUrl}/api/list_users`, {
 			method: 'GET',
 			mode: 'cors',
 			headers: {
@@ -130,7 +131,7 @@ export default function Manage() {
 	
 	const handleDelete = () => {
 		console.log(`userids: ${userState}`);
-		fetch('http://172.19.10.39:5000/api/delete', {
+		fetch(`http://${myConfig.apiUrl}/api/delete`, {
 			method: 'POST',
 			mode: 'cors',
 			headers: {

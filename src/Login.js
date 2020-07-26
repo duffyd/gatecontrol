@@ -12,6 +12,7 @@ import { withStyles } from '@material-ui/core/styles';
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import Alert from '@material-ui/lab/Alert';
 import { TextField } from 'formik-material-ui';
+import { myConfig } from './config.js';
 
 interface Values {
 	username: string;
@@ -68,7 +69,7 @@ class Login extends React.Component {
 	}
 
 	handleLogin = values => {
-		fetch('http://172.19.10.39:5000/api/login', {
+		fetch(`http://${myConfig.apiUrl}/api/login`, {
 			method: 'POST',
 			mode: 'cors',
 			headers: {

@@ -11,6 +11,7 @@ import Container from '@material-ui/core/Container';
 import Alert from '@material-ui/lab/Alert';
 import { TextField, RadioGroup } from 'formik-material-ui';
 import * as Yup from 'yup';
+import { myConfig } from './config.js';
 
 interface Values {
 	username: string;
@@ -61,7 +62,7 @@ export default function Register() {
 	
 	const handleRegister = values => {
 		console.log(`username: ${values.username}, password: ${values.password}, role: ${values.role}`);
-		fetch('http://172.19.10.39:5000/api/register', {
+		fetch(`http://${myConfig.apiUrl}/api/register`, {
 			method: 'POST',
 			mode: 'cors',
 			headers: {

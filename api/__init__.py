@@ -17,7 +17,7 @@ class BadRequest(Exception):
         self.payload = payload
 
 def create_app(test_config=None):
-    app = Flask(__name__, instance_relative_config=True)
+    app = Flask(__name__, instance_relative_config=True, static_folder='../build', static_url_path='/')
     
     app.config['JWT_SECRET_KEY'] = 'please-change-me'
     app.config['CORS_HEADERS'] = 'Content-Type'
@@ -182,4 +182,8 @@ def create_app(test_config=None):
         
         return jsonify({'msg': 'Worked great'}), 200
 
+    @app.route('/')
+    def index():
+        return app.send_static_file('index.html')
+    
     return app
