@@ -2,10 +2,13 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import (JWTManager, create_access_token, get_jwt_identity,
                                 get_jwt_claims, jwt_required)
-from werkzeug.security import check_password_hash, generate_password_hash
+from gpiozero import OutputDevice
 import os
+import time
+from werkzeug.security import check_password_hash, generate_password_hash
 from . import db
 from api.db import get_db
+from api.config import RELAY_PIN
 
 #logging.getLogger('flask_jwt_extended').level = logging.DEBUG
 
@@ -123,7 +126,7 @@ def create_app(test_config=None):
             elif userdb.execute(
                 'SELECT id FROM user WHERE username = ?', (username,)
             ).fetchone() is not None:
-                raise BadRequest('User {} is already registered.'.format(username), 40007, {'ext': 1})
+                raise BadRequest('User {} is already registered.'.format(username), 40008, {'ext': 1})
     
             userdb.execute(
                 'INSERT INTO user (username, password) VALUES (?, ?)',
@@ -169,18 +172,20 @@ def create_app(test_config=None):
     
         return jsonify({'access_token': access_token}), 200
     
-    @app.route('/api/protected', methods=['GET'])
+    @app.route('/api/open_close_gate', methods=['GET'])
     @jwt_required
-    def protected():
+    def open_close_gate():
         #import pdb;pdb.set_trace()
         current_roles = get_jwt_claims()['roles']
-        if current_roles != 'user':
+        if not current_roles in ['user', 'admin']:
             raise BadRequest("You don't have authority to perform this action", 40007, {'ext': 1})
         else:
-            # You can do stuff
-            pass
+            relay = OutputDevice(RELAY_PIN, active_high=False, initial_value=False)
+            relay.on()
+            time.sleep(4)
+            relay.off()
         
-        return jsonify({'msg': 'Worked great'}), 200
+        return jsonify({'msg': 'Successfully opened/closed gate'}), 200
 
     @app.route('/')
     def index():
