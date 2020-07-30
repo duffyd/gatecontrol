@@ -10,8 +10,8 @@ import Link from '@material-ui/core/Link';
 import Typography from '@material-ui/core/Typography';
 import { withStyles } from '@material-ui/core/styles';
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
-import Alert from '@material-ui/lab/Alert';
 import { TextField } from 'formik-material-ui';
+import AlertMessage from "./AlertMessage";
 import { myConfig } from './config.js';
 
 interface Values {
@@ -155,18 +155,16 @@ class Login extends React.Component {
 					<Container component="main" maxWidth="xs">
 						<CssBaseline />
 						<div className={classes.paper}>
-							<div className={classes.root} style={{display:'block', minHeight: '68px'}}>
-								{this.state.errors.map(error => (
-									<Alert severity="error" key={error}>{error}</Alert>
-								))}
-							</div>
+							{this.state.errors.map(error => (
+								<AlertMessage key={Math.random()} message={error} severity={'error'} />
+							))}
 							<Avatar className={classes.avatar}>
 								<LockOutlinedIcon />
 							</Avatar>
 							<Typography component="h1" variant="h5">
 								Login
 							</Typography>
-							<form className={classes.form} onSubmit={this.handleSubmit}>
+							<form className={classes.form} onSubmit={this.handleSubmit} noValidate>
 								<Field
 									component={TextField}
 									variant="outlined"

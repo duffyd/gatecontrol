@@ -8,11 +8,12 @@ import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
-import Alert from '@material-ui/lab/Alert';
 import { TextField, RadioGroup } from 'formik-material-ui';
 import * as Yup from 'yup';
+import AlertMessage from "./AlertMessage";
 import { myConfig } from './config.js';
 
+//eslint-disable-next-line
 interface Values {
 	username: string;
 	password: string;
@@ -124,14 +125,12 @@ export default function Register() {
 				<Container component="main" maxWidth="xs">
 					<CssBaseline />
 					<div className={classes.paper}>
-						<div className={classes.root} style={{display:'block', minHeight: '68px'}}>
-							{errors.map(error => (
-								<Alert severity="error" key={error}>{error}</Alert>
-							))}
-							{successes.map(success => (
-								<Alert severity="success" key={success}>{success}</Alert>
-							))}
-						</div>
+						{errors.map(error => (
+							<AlertMessage key={Math.random()} message={error} severity={'error'} />
+						))}
+						{successes.map(success => (
+							<AlertMessage key={Math.random()} message={success} severity={'success'} />
+						))}
 						<Avatar className={classes.avatar}>
 							<LockOutlinedIcon />
 						</Avatar>

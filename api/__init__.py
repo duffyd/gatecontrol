@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import (JWTManager, create_access_token, get_jwt_identity,
                                 get_jwt_claims, jwt_required)
-from gpiozero import OutputDevice
+from gpiozero import OutputDevice, BadPinFactory
 import os
 import time
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -180,10 +180,13 @@ def create_app(test_config=None):
         if not current_roles in ['user', 'admin']:
             raise BadRequest("You don't have authority to perform this action", 40007, {'ext': 1})
         else:
-            relay = OutputDevice(RELAY_PIN, active_high=False, initial_value=False)
-            relay.on()
-            time.sleep(4)
-            relay.off()
+            try:
+                relay = OutputDevice(RELAY_PIN, active_high=False, initial_value=False)
+                relay.on()
+                time.sleep(4)
+                relay.off()
+            except BadPinFactory:
+                raise BadRequest("You have issues with your gpiozero installation", 40009, {'ext': 1})
         
         return jsonify({'msg': 'Successfully opened/closed gate'}), 200
 

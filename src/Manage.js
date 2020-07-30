@@ -18,8 +18,8 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
-import Alert from '@material-ui/lab/Alert';
 import UserInputs from './UserInputs';
+import AlertMessage from "./AlertMessage";
 import { myConfig } from './config.js';
 
 const useStyles = makeStyles((theme) => ({
@@ -30,7 +30,7 @@ const useStyles = makeStyles((theme) => ({
 		},
 	},
 	paper: {
-		marginTop: theme.spacing(8),
+		marginTop: theme.spacing(11),
 		display: 'flex',
 		flexDirection: 'column',
 		alignItems: 'center',
@@ -86,6 +86,7 @@ export default function Manage() {
 	
 	useEffect(() => {
 		listUsers();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 	
 	const listUsers = () => {
@@ -176,14 +177,12 @@ export default function Manage() {
 		<Container component="main" maxWidth="xs">
 			<CssBaseline />
 			<div className={classes.paper}>
-				<div className={classes.root} style={{display:'block', minHeight: '68px'}}>
-					{errors.map(error => (
-						<Alert severity="error" key={error}>{error}</Alert>
-					))}
-					{successes.map(success => (
-						<Alert severity="success" key={success}>{success}</Alert>
-					))}
-				</div>
+				{errors.map(error => (
+					<AlertMessage key={Math.random()} message={error} severity={'error'} />
+				))}
+				{successes.map(success => (
+					<AlertMessage key={Math.random()} message={success} severity={'success'} />
+				))}
 				<Typography component="h1" variant="h5">
 					Manage Users
 				</Typography>
