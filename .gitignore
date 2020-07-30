@@ -25,3 +25,4 @@ venv
 __pycache__
 /instance
 config.js
+config.py
