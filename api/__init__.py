@@ -13,6 +13,8 @@ from api.db import get_db
 from api.config import RELAY_PIN, JWT_SECRET_KEY, SECRET_KEY
 OPEN = 0
 CLOSED = 1
+OPENING = 2
+CLOSING = 3
 logger = logging.getLogger()
 logging.basicConfig(stream=stdout, level=logging.DEBUG, format="%(asctime)s %(message)s",
                     datefmt="%m/%d/%Y %I:%M:%S %p")
@@ -32,6 +34,19 @@ def activate_relay():
         relay.off()
     except BadPinFactory:
         raise BadRequest("You have issues with your gpiozero installation", 40009, {'ext': 1})
+
+def update_gate_state(app):
+    if app.gate_state == CLOSED:
+        app.gate_state = OPENING
+        time.sleep(4)
+        app.gate_state = OPEN
+        action = 'opened'
+    else:
+        app.gate_state = CLOSING
+        time.sleep(4)
+        app.gate_state = CLOSED
+        action = 'closed'
+    return action
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True, static_folder='../build', static_url_path='/')
@@ -194,14 +209,23 @@ def create_app(test_config=None):
             raise BadRequest("You don't have authority to perform this action", 40007, {'ext': 1})
         else:
             activate_relay()
+            action = update_gate_state(app)
+        return jsonify({'msg': "Successfully {:s} gate".format(action)}), 200
+
+    @app.route('/api/toggle_gate_state', methods=['GET'])
+    @jwt_required
+    def toggle_gate_state():
+        current_roles = get_jwt_claims()['roles']
+        if current_roles != 'admin':
+            raise BadRequest("You don't have authority to perform this action", 40007, {'ext': 1})
+        else:
             if app.gate_state == CLOSED:
                 app.gate_state = OPEN
-                action = 'opened'
+                current_state = 'open'
             else:
                 app.gate_state = CLOSED
-                action = 'closed'
-        
-        return jsonify({'msg': "Successfully {:s} gate".format(action)}), 200
+                current_state = 'closed'
+        return jsonify({'msg': "Successfully changed gate state to {:s}".format(current_state)}), 200
 
     @app.route('/')
     def index():
@@ -210,13 +234,7 @@ def create_app(test_config=None):
     @app.route('/api/set_gate_state', methods=['GET'])
     def set_gate_state():
         activate_relay()
-        if app.gate_state == CLOSED:
-            app.gate_state = OPEN
-            action = 'opened'
-        else:
-            app.gate_state = CLOSED
-            action = 'closed'
-        
+        action = update_gate_state(app)
         return jsonify({'msg': "Successfully {:s} gate".format(action)}), 200
 
     @app.route('/api/get_gate_state', methods=['GET'])

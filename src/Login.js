@@ -108,20 +108,20 @@ class Login extends React.Component {
 		.catch(error => {
 			console.log(error);
 			this.props.onLoginError();
-		});
-	};
+		})
+	}
 
 	handleUsernameChange = e => {
 		this.setState({
 			username: e.target.value
 		});
-	};
+	}
 
 	handlePasswordChange = e => {
 		this.setState({
 			password: e.target.value
 		});
-	};
+	}
 
 	render() {
 		const {classes} = this.props;

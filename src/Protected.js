@@ -9,6 +9,7 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
 import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
+import ToggleOffIcon from '@material-ui/icons/ToggleOff';
 import { withStyles } from '@material-ui/core/styles';
 import withAuth from './withAuth';
 import Manage from './Manage';
@@ -95,7 +96,7 @@ class Protected extends React.Component {
 		.catch(error => {
 			console.log(error);
 		})
-	};
+	}
 	
 	openRegister = () => {
 		if (this.state.registerClicked) {
@@ -115,6 +116,58 @@ class Protected extends React.Component {
 		}
 	}
 	
+	toggleGateState = () => {
+		fetch(`http://${myConfig.apiUrl}/api/toggle_gate_state`, {
+			method: 'GET',
+			mode: 'cors',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${window.localStorage.accessToken}`
+			}
+		})
+		.then(response => {
+			console.log('Got response');
+			if (response.ok) {
+				return response.json();
+			}
+			if (response.status === 400) {
+				return response.json()
+					.then(responseJson => {
+						if (/^4.*$/.test(responseJson.status.toString())) {
+							this.setState({errors: [...this.state.errors, responseJson.message]});
+							setTimeout(function(self) {
+								self.setState({errors: []});
+							}, 5000, this);
+						}
+						throw responseJson;
+					})
+			}
+		})
+		.then(json => {
+			try {
+				this.setState({successes: [...this.state.successes, json.msg]});
+				console.log(this.state.successes);
+				setTimeout(function(self) {
+					self.setState({successes:[]});
+				}, 5000, this);
+			}
+			catch(error) {
+				if (error instanceof TypeError) {
+					this.setState({errors: [...this.state.errors, 'Lost connection with server. Please logout and login again']});
+					setTimeout(function(self) {
+						self.setState({errors: []});
+					}, 5000, this);
+					console.log(error);
+				} else {
+					console.log(error);
+				}
+			}
+		})
+		.catch(error => {
+			console.log(error);
+		})
+	}
+	
 	render() {
 		const {classes} = this.props;
 		const isAdmin = this.props.claims['user_claims']['roles'] === 'admin';
@@ -128,12 +181,15 @@ class Protected extends React.Component {
 						</Typography>
 						{isAdmin &&
 							<>
-							<IconButton onClick={this.openRegister}>
-								<PersonAddIcon style={{ color: 'white' }} />
-							</IconButton>
-							<IconButton onClick={this.openManage}>
-								<DeleteForeverIcon style={{ color: 'white' }} />
-							</IconButton>
+								<IconButton onClick={this.openRegister}>
+									<PersonAddIcon style={{ color: 'white' }} />
+								</IconButton>
+								<IconButton onClick={this.openManage}>
+									<DeleteForeverIcon style={{ color: 'white' }} />
+								</IconButton>
+								<IconButton onClick={this.toggleGateState}>
+									<ToggleOffIcon style={{ color: 'white' }} />
+								</IconButton>
 							</>
 						}
 						<Button color="inherit" onClick={this.props.logout}>Logout</Button>
