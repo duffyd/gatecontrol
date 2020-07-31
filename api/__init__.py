@@ -3,14 +3,19 @@ from flask_cors import CORS
 from flask_jwt_extended import (JWTManager, create_access_token, get_jwt_identity,
                                 get_jwt_claims, jwt_required)
 from gpiozero import OutputDevice, BadPinFactory
+import logging
 import os
+from sys import stdout
 import time
 from werkzeug.security import check_password_hash, generate_password_hash
 from . import db
 from api.db import get_db
-from api.config import RELAY_PIN
-
-#logging.getLogger('flask_jwt_extended').level = logging.DEBUG
+from api.config import RELAY_PIN, JWT_SECRET_KEY, SECRET_KEY
+OPEN = 0
+CLOSED = 1
+logger = logging.getLogger()
+logging.basicConfig(stream=stdout, level=logging.DEBUG, format="%(asctime)s %(message)s",
+                    datefmt="%m/%d/%Y %I:%M:%S %p")
 
 class BadRequest(Exception):
     """Custom exception class to be thrown when local error occurs."""
@@ -19,18 +24,28 @@ class BadRequest(Exception):
         self.status = status
         self.payload = payload
 
+def activate_relay():
+    try:
+        relay = OutputDevice(RELAY_PIN, active_high=False, initial_value=False)
+        relay.on()
+        time.sleep(4)
+        relay.off()
+    except BadPinFactory:
+        raise BadRequest("You have issues with your gpiozero installation", 40009, {'ext': 1})
+
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True, static_folder='../build', static_url_path='/')
     
-    app.config['JWT_SECRET_KEY'] = 'please-change-me'
+    app.config['JWT_SECRET_KEY'] = JWT_SECRET_KEY
     app.config['CORS_HEADERS'] = 'Content-Type'
     app.config['PROPAGATE_EXCEPTIONS'] = True
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.jinja_env.auto_reload = True
     app.config.from_mapping(
-        SECRET_KEY='dev',
+        SECRET_KEY=SECRET_KEY,
         DATABASE=os.path.join(app.instance_path, 'api.sqlite'),
     )
+    app.gate_state = CLOSED
     # ensure the instance folder exists
     try:
         os.makedirs(app.instance_path)
@@ -65,7 +80,6 @@ def create_app(test_config=None):
     @app.route('/api/delete', methods=['POST'])
     @jwt_required
     def delete():
-        #import pdb;pdb.set_trace()
         current_roles = get_jwt_claims()['roles']
         if current_roles != 'admin':
             raise BadRequest("You don't have authority to perform this action", 40007, {'ext': 1})
@@ -89,7 +103,6 @@ def create_app(test_config=None):
     @app.route('/api/list_users', methods=['GET'])
     @jwt_required
     def list_users():
-        #import pdb;pdb.set_trace()
         current_roles = get_jwt_claims()['roles']
         if current_roles != 'admin':
             raise BadRequest("You don't have authority to perform this action", 40007, {'ext': 1})
@@ -102,7 +115,6 @@ def create_app(test_config=None):
     @app.route('/api/register', methods=['POST'])
     @jwt_required
     def register():
-        #import pdb;pdb.set_trace()
         current_roles = get_jwt_claims()['roles']
         if current_roles != 'admin':
             raise BadRequest("You don't have authority to perform this action", 40007, {'ext': 1})
@@ -169,29 +181,46 @@ def create_app(test_config=None):
             raise BadRequest('Invalid username or password', 40003, {'ext': 1})
 
         access_token = create_access_token(identity=user)
-    
+        
+        logger.info('%s successfully logged in', username)
+        
         return jsonify({'access_token': access_token}), 200
     
     @app.route('/api/open_close_gate', methods=['GET'])
     @jwt_required
     def open_close_gate():
-        #import pdb;pdb.set_trace()
         current_roles = get_jwt_claims()['roles']
         if not current_roles in ['user', 'admin']:
             raise BadRequest("You don't have authority to perform this action", 40007, {'ext': 1})
         else:
-            try:
-                relay = OutputDevice(RELAY_PIN, active_high=False, initial_value=False)
-                relay.on()
-                time.sleep(4)
-                relay.off()
-            except BadPinFactory:
-                raise BadRequest("You have issues with your gpiozero installation", 40009, {'ext': 1})
+            activate_relay()
+            if app.gate_state == CLOSED:
+                app.gate_state = OPEN
+                action = 'opened'
+            else:
+                app.gate_state = CLOSED
+                action = 'closed'
         
-        return jsonify({'msg': 'Successfully opened/closed gate'}), 200
+        return jsonify({'msg': "Successfully {:s} gate".format(action)}), 200
 
     @app.route('/')
     def index():
         return app.send_static_file('index.html')
+    
+    @app.route('/api/set_gate_state', methods=['GET'])
+    def set_gate_state():
+        activate_relay()
+        if app.gate_state == CLOSED:
+            app.gate_state = OPEN
+            action = 'opened'
+        else:
+            app.gate_state = CLOSED
+            action = 'closed'
+        
+        return jsonify({'msg': "Successfully {:s} gate".format(action)}), 200
+
+    @app.route('/api/get_gate_state', methods=['GET'])
+    def get_gate_state():
+        return str(app.gate_state), 200
     
     return app
