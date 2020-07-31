@@ -222,5 +222,10 @@ def create_app(test_config=None):
     @app.route('/api/get_gate_state', methods=['GET'])
     def get_gate_state():
         return str(app.gate_state), 200
-    
+   
+    @app.route('/api/get_obstruction_detected', methods=['GET'])
+    def get_obstruction_detected():
+        # Always return NO
+        return str(0), 200
+
     return app
