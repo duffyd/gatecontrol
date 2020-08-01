@@ -210,6 +210,8 @@ def create_app(test_config=None):
         else:
             activate_relay()
             action = update_gate_state(app)
+            current_user = get_jwt_identity()
+            logger.info('%s successfully %s gate', current_user, action)
         return jsonify({'msg': "Successfully {:s} gate".format(action)}), 200
 
     @app.route('/api/toggle_gate_state', methods=['GET'])
