@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import AppBar from '@material-ui/core/AppBar';
 import Box from "@material-ui/core/Box";
-import Button from '@material-ui/core/Button';
+import { Button, LinearProgress } from '@material-ui/core';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import IconButton from '@material-ui/core/IconButton';
 import Toolbar from '@material-ui/core/Toolbar';
@@ -42,11 +42,13 @@ class Protected extends React.Component {
 			errors: [],
 			successes: [],
 			registerClicked: false,
-			manageClicked: false
+			manageClicked: false,
+			isSubmitting: false
 		};
 	}
 
 	handleOpenCloseGate = () => {
+		this.setState({isSubmitting: true});
 		fetch(`http://${myConfig.apiUrl}/api/open_close_gate`, {
 			method: 'GET',
 			mode: 'cors',
@@ -57,6 +59,7 @@ class Protected extends React.Component {
 		})
 		.then(response => {
 			console.log('Got response');
+			this.setState({isSubmitting: false});
 			if (response.ok) {
 				return response.json();
 			}
@@ -198,10 +201,10 @@ class Protected extends React.Component {
 				<div className={classes.paper}>
 					{(!this.state.registerClicked && !this.state.manageClicked) &&
 					<Box
-			  		  display="flex"
-			  		  justifyContent="center"
-			  		  alignItems="center"
-			  		  minHeight="100vh"
+					  display="flex"
+					  justifyContent="center"
+					  alignItems="center"
+					  minHeight="100vh"
 					>
 						{this.state.errors.map(error => (
 							<AlertMessage key={Math.random()} message={error} severity={'error'} />
@@ -209,7 +212,8 @@ class Protected extends React.Component {
 						{this.state.successes.map(success => (
 							<AlertMessage key={Math.random()} message={success} severity={'success'} />
 						))}
-						<Button className={classes.gatecontrolbtn} variant="contained" color="secondary" size="large" onClick={this.handleOpenCloseGate}>
+						{this.state.isSubmitting && <LinearProgress />}
+						<Button className={classes.gatecontrolbtn} variant="contained" color="secondary" size="large" disabled={this.state.isSubmitting} onClick={this.handleOpenCloseGate}>
 							Open/close gate
 						</Button>
 					</Box>
