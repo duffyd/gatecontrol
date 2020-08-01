@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import AppBar from '@material-ui/core/AppBar';
 import Box from "@material-ui/core/Box";
-import { Button, LinearProgress } from '@material-ui/core';
+import Button from '@material-ui/core/Button';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import IconButton from '@material-ui/core/IconButton';
 import Toolbar from '@material-ui/core/Toolbar';
@@ -212,7 +212,6 @@ class Protected extends React.Component {
 						{this.state.successes.map(success => (
 							<AlertMessage key={Math.random()} message={success} severity={'success'} />
 						))}
-						{this.state.isSubmitting && <LinearProgress />}
 						<Button className={classes.gatecontrolbtn} variant="contained" color="secondary" size="large" disabled={this.state.isSubmitting} onClick={this.handleOpenCloseGate}>
 							Open/close gate
 						</Button>
