@@ -38,12 +38,12 @@ def activate_relay():
 def update_gate_state(app):
     if app.gate_state == CLOSED:
         app.gate_state = OPENING
-        time.sleep(4)
+        time.sleep(2)
         app.gate_state = OPEN
         action = 'opened'
     else:
         app.gate_state = CLOSING
-        time.sleep(4)
+        time.sleep(2)
         app.gate_state = CLOSED
         action = 'closed'
     return action
