@@ -30,7 +30,7 @@ def activate_relay():
     try:
         relay = OutputDevice(RELAY_PIN, active_high=False, initial_value=False)
         relay.on()
-        #time.sleep(4)
+        time.sleep(2)
         relay.off()
     except BadPinFactory:
         raise BadRequest("You have issues with your gpiozero installation", 40009, {'ext': 1})
