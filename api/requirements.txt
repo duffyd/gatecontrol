@@ -1,7 +1,7 @@
 click==7.1.2
 colorzero==1.1
 Flask==1.1.2
-Flask-Cors==3.0.8
+Flask-Cors==3.0.9
 Flask-JWT-Extended==3.24.1
 gunicorn==20.0.4
 itsdangerous==1.1.0
