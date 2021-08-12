@@ -2,19 +2,20 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import (JWTManager, create_access_token, get_jwt_identity,
                                 get_jwt_claims, jwt_required)
-from gpiozero import OutputDevice, BadPinFactory
 import logging
+import paho.mqtt.client as mqtt
 import os
 from sys import stdout
-import time
 from werkzeug.security import check_password_hash, generate_password_hash
 from . import db
 from api.db import get_db
-from api.config import RELAY_PIN, JWT_SECRET_KEY, SECRET_KEY
+from api.config import JWT_SECRET_KEY, SECRET_KEY, MQTT_BROKER, MQTT_USER, MQTT_PASSWORD
+try:
+    from api.config import DEVICE_TOPIC
+except ImportError:
+    DEVICE_TOPIC = 'gate'
 OPEN = 0
 CLOSED = 1
-OPENING = 2
-CLOSING = 3
 logger = logging.getLogger()
 logging.basicConfig(stream=stdout, level=logging.DEBUG, format="%(asctime)s %(message)s",
                     datefmt="%m/%d/%Y %I:%M:%S %p")
@@ -26,22 +27,14 @@ class BadRequest(Exception):
         self.status = status
         self.payload = payload
 
-def activate_relay():
-    try:
-        relay = OutputDevice(RELAY_PIN, active_high=False, initial_value=False)
-        relay.on()
-        time.sleep(2)
-        relay.off()
-    except BadPinFactory:
-        raise BadRequest("You have issues with your gpiozero installation", 40009, {'ext': 1})
+def activate_relay(mqtt_client):
+    mqtt_client.publish('cmnd/{}/Power2'.format(DEVICE_TOPIC), 'TOGGLE')
 
 def update_gate_state(app):
     if app.gate_state == CLOSED:
-        app.gate_state = OPENING
         app.gate_state = OPEN
         action = 'opened'
     else:
-        app.gate_state = CLOSING
         app.gate_state = CLOSED
         action = 'closed'
     return action
@@ -69,7 +62,11 @@ def create_app(test_config=None):
 
     jwt = JWTManager(app)
     CORS(app)
-            
+
+    mqtt_client = mqtt.Client('P1')
+    mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
+    mqtt_client.connect(MQTT_BROKER)
+
     @app.errorhandler(BadRequest)
     def handle_bad_request(error):
         """Catch BadRequest exception globally, serialize into JSON, and respond with 400."""
@@ -206,7 +203,7 @@ def create_app(test_config=None):
         if not current_roles in ['user', 'admin']:
             raise BadRequest("You don't have authority to perform this action", 40007, {'ext': 1})
         else:
-            activate_relay()
+            activate_relay(mqtt_client)
             action = update_gate_state(app)
             current_user = get_jwt_identity()
             logger.info('%s successfully %s gate', current_user, action)
@@ -230,20 +227,5 @@ def create_app(test_config=None):
     @app.route('/')
     def index():
         return app.send_static_file('index.html')
-    
-    @app.route('/api/set_gate_state', methods=['GET'])
-    def set_gate_state():
-        activate_relay()
-        action = update_gate_state(app)
-        return jsonify({'msg': "Successfully {:s} gate".format(action)}), 200
-
-    @app.route('/api/get_gate_state', methods=['GET'])
-    def get_gate_state():
-        return str(app.gate_state), 200
-   
-    @app.route('/api/get_obstruction_detected', methods=['GET'])
-    def get_obstruction_detected():
-        # Always return NO
-        return str(0), 200
 
     return app
